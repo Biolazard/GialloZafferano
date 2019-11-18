@@ -59,7 +59,7 @@ def downloadAllRecipesFromGialloZafferano():
         
         for tag in soup.find_all(attrs={'class' : 'gz-title'}):
             link = tag.a.get('href')
-#            saveRecipe(link)
+            saveRecipe(link)
         for tag in soup.find_all(attrs={'class' : 'gz-breadcrumb'}):
             category = tag.a.get('href')
             print("hello")
