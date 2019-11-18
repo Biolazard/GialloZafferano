@@ -8,12 +8,14 @@
 
 /* Begin PBXFileReference section */
 		A42569DF237DA7810033B91F /* main.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = main.py; sourceTree = "<group>"; };
+		A45471952382B6F300F7FB8B /* ModelRecipe.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = ModelRecipe.py; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		A42569D4237DA73A0033B91F = {
 			isa = PBXGroup;
 			children = (
+				A45471952382B6F300F7FB8B /* ModelRecipe.py */,
 				A42569DF237DA7810033B91F /* main.py */,
 			);
 			sourceTree = "<group>";
