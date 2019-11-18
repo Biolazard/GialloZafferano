@@ -5,5 +5,5 @@ class ModelRecipe:
     ingredients = []
     
     def toDictionary(self):
-        recipe = {"title": self.title, "category": self.category, "ingredients": self.ingredients, "description": self.description}
+        recipe = {"title": self.title, "category": self.category, "description": self.description, "ingredients": self.ingredients}
         return recipe

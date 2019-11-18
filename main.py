@@ -6,23 +6,26 @@ import string
 from string import digits
 import json
 from ModelRecipe import ModelRecipe
+import os
 
 #Prendere categoria ricetta
 #Andare a vedere anche ricette su altri siti
 
+debug = True
 
 def saveRecipe(linkRecipeToDownload):
     soup = downloadPage(linkRecipeToDownload)
     title = findTitle(soup)
     ingredients = findIngredients(soup)
     description = findDescription(soup)
+    category = findCategory(soup)
     
     modelRecipe = ModelRecipe()
     modelRecipe.title = title
     modelRecipe.ingredients = ingredients
     modelRecipe.description = description
-    modelRecipe.category = "PRIMO PIATTO"
-    
+    modelRecipe.category = category
+
     createFileJson(modelRecipe.toDictionary(), modelRecipe.title)
     
  
@@ -49,9 +52,17 @@ def findDescription(soup):
         description = tag.p.text.translate(removeNumbers)
         allDescription =  allDescription + description
     return allDescription
-        
+    
+def findCategory(soup):
+    for tag in soup.find_all(attrs={'class' : 'gz-breadcrumb'}):
+        category = tag.li.a.string
+        return category
+
 def createFileJson(recipes, name):
-    with open(name + '.txt', 'w') as file:
+    folderRecipes = "Recipes"
+    if not os.path.exists(folderRecipes):
+        os.makedirs(folderRecipes)
+    with open(folderRecipes + '/' + name + '.txt', 'w') as file:
      file.write(json.dumps(recipes, ensure_ascii=False))
     
 def downloadPage(linkToDownload):
@@ -69,11 +80,11 @@ def downloadAllRecipesFromGialloZafferano():
             link = tag.a.get('href')
             saveRecipe(link)
             
-        for tag in soup.find_all(attrs={'class' : 'gz-breadcrumb'}):
-            category = tag.a.get('href')
-            print("hello")
-            print(category)
-    
+            if debug :
+                break
+        if debug :
+            break
+        
 def countTotalPages():
     numberOfPages = 0
     linkList = 'https://www.giallozafferano.it/ricette-cat'
