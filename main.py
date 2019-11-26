@@ -7,11 +7,9 @@ from string import digits
 import json
 from ModelRecipe import ModelRecipe
 import os
+import base64
 
-#Prendere categoria ricetta
-#Andare a vedere anche ricette su altri siti
-
-debug = True
+debug = False
 
 def saveRecipe(linkRecipeToDownload):
     soup = downloadPage(linkRecipeToDownload)
@@ -19,17 +17,18 @@ def saveRecipe(linkRecipeToDownload):
     ingredients = findIngredients(soup)
     description = findDescription(soup)
     category = findCategory(soup)
+    imageBase64 = findImage(soup)
     
     modelRecipe = ModelRecipe()
     modelRecipe.title = title
     modelRecipe.ingredients = ingredients
     modelRecipe.description = description
     modelRecipe.category = category
+    modelRecipe.imageBase64 = imageBase64
 
     createFileJson(modelRecipe.toDictionary(), modelRecipe.title)
     
- 
-def findTitle(soup):
+ def findTitle(soup):
     titleRecipe = ""
     for title in soup.find_all(attrs={'class' : 'gz-title-recipe gz-mBottom2x'}):
         titleRecipe = title.text
@@ -58,6 +57,13 @@ def findCategory(soup):
         category = tag.li.a.string
         return category
 
+def findImage(soup):
+    for tag in soup.find_all(attrs={'class' : 'gz-featured-image'}):
+        imageURL = tag.source.get('data-srcset')
+        imageToBase64 = str(base64.b64encode(requests.get(imageURL).content))
+        imageToBase64 = imageToBase64[2:len(imageToBase64)-1]
+        return imageToBase64
+
 def createFileJson(recipes, name):
     folderRecipes = "Recipes"
     if not os.path.exists(folderRecipes):
@@ -75,13 +81,12 @@ def downloadAllRecipesFromGialloZafferano():
         linkList = 'https://www.giallozafferano.it/ricette-cat/page' + str(pageNumber)
         response = requests.get(linkList)
         soup= BeautifulSoup(response.text, 'html.parser')
-        
         for tag in soup.find_all(attrs={'class' : 'gz-title'}):
             link = tag.a.get('href')
             saveRecipe(link)
-            
             if debug :
                 break
+            
         if debug :
             break
         
