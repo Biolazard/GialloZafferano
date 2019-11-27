@@ -11,7 +11,10 @@ import base64
 
 debug = False
 
-def saveRecipe(linkRecipeToDownload):
+# Creare una lista con il nome di ogni ricetta scaricata fino ad ora,
+# così evito di fargli riscaricare ricetto che ho già ho in locale o in un ipotetico db
+
+def createRecipe(linkRecipeToDownload):
     soup = downloadPage(linkRecipeToDownload)
     title = findTitle(soup)
     ingredients = findIngredients(soup)
@@ -25,10 +28,10 @@ def saveRecipe(linkRecipeToDownload):
     modelRecipe.description = description
     modelRecipe.category = category
     modelRecipe.imageBase64 = imageBase64
-
-    createFileJson(modelRecipe.toDictionary(), modelRecipe.title)
     
- def findTitle(soup):
+    return modelRecipe.toDictionary()
+    
+def findTitle(soup):
     titleRecipe = ""
     for title in soup.find_all(attrs={'class' : 'gz-title-recipe gz-mBottom2x'}):
         titleRecipe = title.text
@@ -77,16 +80,21 @@ def downloadPage(linkToDownload):
     return soup
 
 def downloadAllRecipesFromGialloZafferano():
+    listRecipes = []
     for pageNumber in range(1,countTotalPages() + 1):
         linkList = 'https://www.giallozafferano.it/ricette-cat/page' + str(pageNumber)
         response = requests.get(linkList)
         soup= BeautifulSoup(response.text, 'html.parser')
         for tag in soup.find_all(attrs={'class' : 'gz-title'}):
             link = tag.a.get('href')
-            saveRecipe(link)
-            if debug :
-                break
+            listRecipes.append(createRecipe(link))
             
+            if debug :
+                createFileJson(listRecipes, "Recipes DEBUG")
+                break
+                
+        createFileJson(listRecipes, "Recipes RELEASE")
+                
         if debug :
             break
         
