@@ -18,7 +18,7 @@ def saveRecipe(linkRecipeToDownload):
     description = findDescription(soup)
     category = findCategory(soup)
     imageBase64 = findImage(soup)
-    
+
     modelRecipe = ModelRecipe()
     modelRecipe.title = title
     modelRecipe.ingredients = ingredients
@@ -27,8 +27,8 @@ def saveRecipe(linkRecipeToDownload):
     modelRecipe.imageBase64 = imageBase64
 
     createFileJson(modelRecipe.toDictionary(), modelRecipe.title)
-    
- def findTitle(soup):
+
+def findTitle(soup):
     titleRecipe = ""
     for title in soup.find_all(attrs={'class' : 'gz-title-recipe gz-mBottom2x'}):
         titleRecipe = title.text
@@ -51,7 +51,7 @@ def findDescription(soup):
         description = tag.p.text.translate(removeNumbers)
         allDescription =  allDescription + description
     return allDescription
-    
+
 def findCategory(soup):
     for tag in soup.find_all(attrs={'class' : 'gz-breadcrumb'}):
         category = tag.li.a.string
@@ -59,7 +59,7 @@ def findCategory(soup):
 
 def findImage(soup):
     for tag in soup.find_all(attrs={'class' : 'gz-featured-image'}):
-        imageURL = tag.source.get('data-srcset')
+        imageURL = tag.img.get('data-src')
         imageToBase64 = str(base64.b64encode(requests.get(imageURL).content))
         imageToBase64 = imageToBase64[2:len(imageToBase64)-1]
         return imageToBase64
@@ -70,7 +70,7 @@ def createFileJson(recipes, name):
         os.makedirs(folderRecipes)
     with open(folderRecipes + '/' + name + '.txt', 'w') as file:
      file.write(json.dumps(recipes, ensure_ascii=False))
-    
+
 def downloadPage(linkToDownload):
     response = requests.get(linkToDownload)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -86,10 +86,10 @@ def downloadAllRecipesFromGialloZafferano():
             saveRecipe(link)
             if debug :
                 break
-            
+
         if debug :
             break
-        
+
 def countTotalPages():
     numberOfPages = 0
     linkList = 'https://www.giallozafferano.it/ricette-cat'
@@ -98,7 +98,6 @@ def countTotalPages():
     for tag in soup.find_all(attrs={'class' : 'disabled total-pages'}):
         numberOfPages = int(tag.text)
     return numberOfPages
-        
+
 if __name__ == '__main__' :
     downloadAllRecipesFromGialloZafferano()
-
