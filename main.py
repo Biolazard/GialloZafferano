@@ -98,7 +98,7 @@ def downloadPage(linkToDownload):
     return soup
 
 def downloadAllRecipesFromGialloZafferano():
-    for pageNumber in tqdm(range(1,countTotalPages() + 1)):
+    for pageNumber in range(1,countTotalPages() + 1):
         linkList = 'https://www.giallozafferano.it/ricette-cat/page' + str(pageNumber)
         response = requests.get(linkList)
         soup= BeautifulSoup(response.text, 'html.parser')
