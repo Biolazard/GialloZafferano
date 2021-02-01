@@ -58,18 +58,39 @@ def findCategory(soup):
         return category
 
 def findImage(soup):
-    for tag in soup.find_all(attrs={'class' : 'gz-featured-image'}):
-        imageURL = tag.img.get('data-src')
-        imageToBase64 = str(base64.b64encode(requests.get(imageURL).content))
-        imageToBase64 = imageToBase64[2:len(imageToBase64)-1]
-        return imageToBase64
+
+    # Find the first picture tag
+    pictures = soup.find('picture', attrs={'class': 'gz-featured-image'})
+
+    # Fallback: find a div with class `gz-featured-image-video gz-type-photo`
+    if pictures is None:
+        pictures = soup.find('div', attrs={'class': 'gz-featured-image-video gz-type-photo'})
+
+    imageSource = pictures.find('img')
+
+    # Most of the times the url is in the `data-src` attribute
+    imageURL = imageSource.get('data-src')
+
+    # Fallback: if not found in `data-src` look for the `src` attr
+    # Most likely, recipes which have the `src` attr
+    # instead of the `data-src` one
+    # are the older ones.
+    # As a matter of fact, those are the ones enclosed
+    # in <div> tags instead of <picture> tags (supported only on html5 and onward)
+    if imageURL is None:
+        imageURL = imageSource.get('src')
+
+    imageToBase64 = str(base64.b64encode(requests.get(imageURL).content))
+    imageToBase64 = imageToBase64[2:len(imageToBase64) - 1]
+    return imageToBase64
 
 def createFileJson(recipes, name):
+    compact_name = name.replace(" ", "_").lower()
     folderRecipes = "Recipes"
     if not os.path.exists(folderRecipes):
         os.makedirs(folderRecipes)
-    with open(folderRecipes + '/' + name + '.txt', 'w') as file:
-     file.write(json.dumps(recipes, ensure_ascii=False))
+    with open(folderRecipes + '/' + compact_name + '.json', 'w') as file:
+        file.write(json.dumps(recipes, ensure_ascii=False))
 
 def downloadPage(linkToDownload):
     response = requests.get(linkToDownload)
@@ -77,7 +98,7 @@ def downloadPage(linkToDownload):
     return soup
 
 def downloadAllRecipesFromGialloZafferano():
-    for pageNumber in range(1,countTotalPages() + 1):
+    for pageNumber in tqdm(range(1,countTotalPages() + 1)):
         linkList = 'https://www.giallozafferano.it/ricette-cat/page' + str(pageNumber)
         response = requests.get(linkList)
         soup= BeautifulSoup(response.text, 'html.parser')
