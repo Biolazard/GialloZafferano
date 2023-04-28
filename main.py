@@ -8,12 +8,19 @@ import json
 from ModelRecipe import ModelRecipe
 import os
 import base64
+from tqdm import tqdm
 
 debug = False
+folderRecipes = "Recipes"
 
 def saveRecipe(linkRecipeToDownload):
     soup = downloadPage(linkRecipeToDownload)
     title = findTitle(soup)
+
+    filePath = calculateFilePath(title);
+    if os.path.exists(filePath):
+        return
+
     ingredients = findIngredients(soup)
     description = findDescription(soup)
     category = findCategory(soup)
@@ -26,7 +33,7 @@ def saveRecipe(linkRecipeToDownload):
     modelRecipe.category = category
     modelRecipe.imageBase64 = imageBase64
 
-    createFileJson(modelRecipe.toDictionary(), modelRecipe.title)
+    createFileJson(modelRecipe.toDictionary(), filePath)
 
 def findTitle(soup):
     titleRecipe = ""
@@ -48,8 +55,9 @@ def findDescription(soup):
     allDescription = ""
     for tag in soup.find_all(attrs={'class' : 'gz-content-recipe-step'}):
         removeNumbers = str.maketrans('', '', digits)
-        description = tag.p.text.translate(removeNumbers)
-        allDescription =  allDescription + description
+        if hasattr(tag.p, 'text'):
+            description = tag.p.text.translate(removeNumbers)
+            allDescription =  allDescription + description
     return allDescription
 
 def findCategory(soup):
@@ -84,13 +92,13 @@ def findImage(soup):
     imageToBase64 = imageToBase64[2:len(imageToBase64) - 1]
     return imageToBase64
 
-def createFileJson(recipes, name):
-    compact_name = name.replace(" ", "_").lower()
-    folderRecipes = "Recipes"
-    if not os.path.exists(folderRecipes):
-        os.makedirs(folderRecipes)
-    with open(folderRecipes + '/' + compact_name + '.json', 'w') as file:
-        file.write(json.dumps(recipes, ensure_ascii=False))
+def calculateFilePath(title):
+    compact_name = title.replace(" ", "_").lower()
+    return folderRecipes + '/' + compact_name + '.json'
+
+def createFileJson(data, path):
+    with open(path, 'w') as file:
+        file.write(json.dumps(data, ensure_ascii=False))
 
 def downloadPage(linkToDownload):
     response = requests.get(linkToDownload)
@@ -98,7 +106,9 @@ def downloadPage(linkToDownload):
     return soup
 
 def downloadAllRecipesFromGialloZafferano():
-    for pageNumber in range(1,countTotalPages() + 1):
+    totalPages = countTotalPages() + 1
+    # for pageNumber in range(1,totalPages):
+    for pageNumber in tqdm (range (1, totalPages), desc="pages…", ascii=False, ncols=75):
         linkList = 'https://www.giallozafferano.it/ricette-cat/page' + str(pageNumber)
         response = requests.get(linkList)
         soup= BeautifulSoup(response.text, 'html.parser')
@@ -121,4 +131,6 @@ def countTotalPages():
     return numberOfPages
 
 if __name__ == '__main__' :
+    if not os.path.exists(folderRecipes):
+        os.makedirs(folderRecipes)
     downloadAllRecipesFromGialloZafferano()
