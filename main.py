@@ -1,23 +1,26 @@
-import requests
-import urllib.request
-from bs4 import BeautifulSoup
+import base64
+import json
+import os
 import re
 import string
+import urllib.request
 from string import digits
-import json
-from ModelRecipe import ModelRecipe
-import os
-import base64
+
+import requests
+from bs4 import BeautifulSoup
 from tqdm import tqdm
+
+from ModelRecipe import ModelRecipe
 
 debug = False
 folderRecipes = "Recipes"
+
 
 def saveRecipe(linkRecipeToDownload):
     soup = downloadPage(linkRecipeToDownload)
     title = findTitle(soup)
 
-    filePath = calculateFilePath(title);
+    filePath = calculateFilePath(title)
     if os.path.exists(filePath):
         return
 
@@ -35,49 +38,56 @@ def saveRecipe(linkRecipeToDownload):
 
     createFileJson(modelRecipe.toDictionary(), filePath)
 
+
 def findTitle(soup):
     titleRecipe = ""
-    for title in soup.find_all(attrs={'class' : 'gz-title-recipe gz-mBottom2x'}):
+    for title in soup.find_all(attrs={"class": "gz-title-recipe gz-mBottom2x"}):
         titleRecipe = title.text
     return titleRecipe
 
+
 def findIngredients(soup):
     allIngredients = []
-    for tag in soup.find_all(attrs={'class' : 'gz-ingredient'}):
-        link = tag.a.get('href')
+    for tag in soup.find_all(attrs={"class": "gz-ingredient"}):
+        link = tag.a.get("href")
         nameIngredient = tag.a.string
         contents = tag.span.contents[0]
-        quantityProduct = re.sub(r"\s+", " ",  contents).strip()
+        quantityProduct = re.sub(r"\s+", " ", contents).strip()
         allIngredients.append([nameIngredient, quantityProduct])
     return allIngredients
 
+
 def findDescription(soup):
     allDescription = ""
-    for tag in soup.find_all(attrs={'class' : 'gz-content-recipe-step'}):
-        removeNumbers = str.maketrans('', '', digits)
-        if hasattr(tag.p, 'text'):
+    for tag in soup.find_all(attrs={"class": "gz-content-recipe-step"}):
+        removeNumbers = str.maketrans("", "", digits)
+        if hasattr(tag.p, "text"):
             description = tag.p.text.translate(removeNumbers)
-            allDescription =  allDescription + description
+            allDescription = allDescription + description
     return allDescription
 
+
 def findCategory(soup):
-    for tag in soup.find_all(attrs={'class' : 'gz-breadcrumb'}):
+    for tag in soup.find_all(attrs={"class": "gz-breadcrumb"}):
         category = tag.li.a.string
         return category
+
 
 def findImage(soup):
 
     # Find the first picture tag
-    pictures = soup.find('picture', attrs={'class': 'gz-featured-image'})
+    pictures = soup.find("picture", attrs={"class": "gz-featured-image"})
 
     # Fallback: find a div with class `gz-featured-image-video gz-type-photo`
     if pictures is None:
-        pictures = soup.find('div', attrs={'class': 'gz-featured-image-video gz-type-photo'})
+        pictures = soup.find(
+            "div", attrs={"class": "gz-featured-image-video gz-type-photo"}
+        )
 
-    imageSource = pictures.find('img')
+    imageSource = pictures.find("img")
 
     # Most of the times the url is in the `data-src` attribute
-    imageURL = imageSource.get('data-src')
+    imageURL = imageSource.get("data-src")
 
     # Fallback: if not found in `data-src` look for the `src` attr
     # Most likely, recipes which have the `src` attr
@@ -86,51 +96,57 @@ def findImage(soup):
     # As a matter of fact, those are the ones enclosed
     # in <div> tags instead of <picture> tags (supported only on html5 and onward)
     if imageURL is None:
-        imageURL = imageSource.get('src')
+        imageURL = imageSource.get("src")
 
     imageToBase64 = str(base64.b64encode(requests.get(imageURL).content))
-    imageToBase64 = imageToBase64[2:len(imageToBase64) - 1]
+    imageToBase64 = imageToBase64[2 : len(imageToBase64) - 1]
     return imageToBase64
+
 
 def calculateFilePath(title):
     compact_name = title.replace(" ", "_").lower()
-    return folderRecipes + '/' + compact_name + '.json'
+    return folderRecipes + "/" + compact_name + ".json"
+
 
 def createFileJson(data, path):
-    with open(path, 'w') as file:
+    with open(path, "w") as file:
         file.write(json.dumps(data, ensure_ascii=False))
+
 
 def downloadPage(linkToDownload):
     response = requests.get(linkToDownload)
-    soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(response.text, "html.parser")
     return soup
+
 
 def downloadAllRecipesFromGialloZafferano():
     totalPages = countTotalPages() + 1
     # for pageNumber in range(1,totalPages):
-    for pageNumber in tqdm (range (1, totalPages), desc="pages…", ascii=False, ncols=75):
-        linkList = 'https://www.giallozafferano.it/ricette-cat/page' + str(pageNumber)
+    for pageNumber in tqdm(range(1, totalPages), desc="pages…", ascii=False, ncols=75):
+        linkList = "https://www.giallozafferano.it/ricette-cat/page" + str(pageNumber)
         response = requests.get(linkList)
-        soup= BeautifulSoup(response.text, 'html.parser')
-        for tag in soup.find_all(attrs={'class' : 'gz-title'}):
-            link = tag.a.get('href')
+        soup = BeautifulSoup(response.text, "html.parser")
+        for tag in soup.find_all(attrs={"class": "gz-title"}):
+            link = tag.a.get("href")
             saveRecipe(link)
-            if debug :
+            if debug:
                 break
 
-        if debug :
+        if debug:
             break
+
 
 def countTotalPages():
     numberOfPages = 0
-    linkList = 'https://www.giallozafferano.it/ricette-cat'
+    linkList = "https://www.giallozafferano.it/ricette-cat"
     response = requests.get(linkList)
-    soup= BeautifulSoup(response.text, 'html.parser')
-    for tag in soup.find_all(attrs={'class' : 'disabled total-pages'}):
+    soup = BeautifulSoup(response.text, "html.parser")
+    for tag in soup.find_all(attrs={"class": "disabled total-pages"}):
         numberOfPages = int(tag.text)
     return numberOfPages
 
-if __name__ == '__main__' :
+
+if __name__ == "__main__":
     if not os.path.exists(folderRecipes):
         os.makedirs(folderRecipes)
     downloadAllRecipesFromGialloZafferano()

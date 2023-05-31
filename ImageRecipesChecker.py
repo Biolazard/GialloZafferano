@@ -1,13 +1,20 @@
-import os
 import json
+import os
 
 DEBUG = True
 
-if __name__ == '__main__':
-    recipes = sorted([os.path.join(os.getcwd(), "Recipes", recipie) for recipie in os.listdir("Recipes")])
+if __name__ == "__main__":
+    recipes = sorted(
+        [
+            os.path.join(os.getcwd(), "Recipes", recipie)
+            for recipie in os.listdir("Recipes")
+        ]
+    )
     null_images = 0
     for recipe in recipes:
-        readable_name = recipe.split('/')[-1].replace(".json", "").replace("_", " ").capitalize()
+        readable_name = (
+            recipe.split("/")[-1].replace(".json", "").replace("_", " ").capitalize()
+        )
         if DEBUG:
             print(f"Checking {readable_name}...", end="")
         with open(recipe, "r") as recipe_file:
@@ -20,6 +27,5 @@ if __name__ == '__main__':
                     print("[MISSING]")
                 else:
                     print("[OK!]")
-
 
     print(f"Total missing images: {null_images} / {len(recipes)}")
